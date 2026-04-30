@@ -1,0 +1,30 @@
+# AI Generated / Persistent State
+output/
+config/session_memory.md
+seen_media.json
+
+# Media & Temp
+*.mp3
+*.wav
+*.m4a
+*.txt
+*.log
+
+# Environment
+.env
+secrets.env
+.venv/
+venv/
+
+# Python / Build
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# External
+whisper.cpp/
+whisper.cpp/models/*.bin

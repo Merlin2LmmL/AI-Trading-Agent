@@ -1,0 +1,456 @@
+# =============================================================================
+# sources.yaml — All media sources ingested by Stage 1
+# =============================================================================
+
+# ── English News RSS Feeds ────────────────────────────────────────────────────
+rss_feeds:
+
+  # US Financial News (Investopedia removed due to bot blocking)
+  - name: CNBC Top News
+    url: https://www.cnbc.com/id/100003114/device/rss/rss.html
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: Federal Reserve Press Releases
+    url: https://www.federalreserve.gov/feeds/press_all.xml
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Markets
+    url: https://www.cnbc.com/id/20910258/device/rss/rss.html
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Investing
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Financial Advisor
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100646281
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Personal Finance
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=21324812
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Market Insider
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20409666
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Trader Talk (Bob Pisani)
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20398120
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Buffett Watch
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19206666
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Fast Money (RSS)
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15838499
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC International News
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100727362
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC U.S. News
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15837362
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Asia News
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19832390
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Europe News
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19794221
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Business News
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Economy
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Finance
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Technology
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: CNBC Politics
+    url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: Yahoo Finance
+    url: https://finance.yahoo.com/news/rssindex
+    category: news
+    language: en
+    credibility: MEDIUM
+
+  - name: Seeking Alpha
+    url: https://seekingalpha.com/feed.xml
+    category: analysis
+    language: en
+    credibility: MEDIUM
+
+  - name: MarketWatch
+    url: https://feeds.marketwatch.com/marketwatch/topstories/
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: Motley Fool
+    url: https://www.fool.com/feeds/index.aspx
+    category: analysis
+    language: en
+    credibility: MEDIUM
+
+  - name: OilPrice Main
+    url: https://oilprice.com/rss/main
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: TechCrunch
+    url: https://techcrunch.com/feed/
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: VentureBeat Main
+    url: https://venturebeat.com/feed/
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: VentureBeat AI
+    url: https://venturebeat.com/category/ai/feed/
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: VentureBeat Security
+    url: https://venturebeat.com/category/security/feed/
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: Geopolitics.co
+    url: https://geopolitics.co/feed/
+    category: news
+    language: en
+    credibility: MEDIUM
+
+  - name: Dow Jones Social Economy
+    url: https://feeds.content.dowjones.io/public/rss/socialeconomyfeed
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: The Big Picture (Ritholtz)
+    url: https://ritholtz.com/feed/
+    category: analysis
+    language: en
+    credibility: HIGH
+
+  - name: AIER (Economic Research)
+    url: https://aier.org/feed/
+    category: analysis
+    language: en
+    credibility: HIGH
+
+  # ── Company-Specific Sources ───────────────────────────────────────────────
+  - name: TCP Capital (Press)
+    url: https://tcpcapital.com/rss/pressrelease.aspx
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: TCP Capital (Events)
+    url: https://tcpcapital.com/rss/event.aspx
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: TCP Capital (Sec Filings)
+    url: https://tcpcapital.com/rss/SECFiling.aspx?Exchange=CIK&Symbol=0001370755
+    category: news
+    language: en
+    credibility: HIGH
+
+  # ── German Financial News RSS Feeds ────────────────────────────────────────
+  - name: Handelsblatt Schlagzeilen
+    url: https://www.handelsblatt.com/contentexport/feed/schlagzeilen
+    category: news
+    language: de
+    credibility: HIGH
+
+  - name: Handelsblatt Finanzen
+    url: https://www.handelsblatt.com/contentexport/feed/finanzen
+    category: news
+    language: de
+    credibility: HIGH
+
+  - name: Handelsblatt Unternehmen
+    url: https://www.handelsblatt.com/contentexport/feed/unternehmen
+    category: news
+    language: de
+    credibility: HIGH
+
+  - name: Handelsblatt Politik
+    url: https://www.handelsblatt.com/contentexport/feed/politik
+    category: news
+    language: de
+    credibility: HIGH
+
+
+  - name: FAZ Finanzen
+    url: https://www.faz.net/rss/aktuell/finanzen/
+    category: news
+    language: de
+    credibility: HIGH
+
+  - name: WELT Wirtschaft
+    url: https://www.welt.de/feeds/section/wirtschaft.rss
+    category: news
+    language: de
+    credibility: HIGH
+
+  - name: WirtschaftsWoche Schlagzeilen
+    url: https://www.wiwo.de/contentexport/feed/rss/schlagzeilen
+    category: news
+    language: de
+    credibility: HIGH
+
+  - name: wallstreet-online News
+    url: https://www.wallstreet-online.de/nachrichten/rss/nachrichten.xml
+    category: news
+    language: de
+    credibility: MEDIUM
+
+  - name: Börse Frankfurt
+    url: https://www.boerse-frankfurt.de/nachrichten/rss
+    category: news
+    language: de
+    credibility: HIGH
+
+  - name: Aktiencheck
+    url: https://www.aktiencheck.de/rss/aktiennews.xml
+    category: news
+    language: de
+    credibility: MEDIUM
+
+  - name: Aktiennews24
+    url: https://www.aktiennews24.de/feed/
+    category: news
+    language: de
+    credibility: LOW
+
+  - name: DAX Finanzforum
+    url: https://www.wallstreet-online.de/forum/rss/7-1.xml
+    category: analysis
+    language: de
+    credibility: LOW
+
+  - name: Tagesschau Wirtschaft
+    url: https://www.tagesschau.de/wirtschaft/index~rss2.xml
+    category: news
+    language: de
+    credibility: HIGH
+
+  # ── South Korean & Asia-Pacific News ────────────────────────────────────────
+  - name: Korea Herald Business
+    url: https://www.koreaherald.com/rss/020100000000.xml
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: Korea Times Finance
+    url: https://www.koreatimes.co.kr/www/rss/biz.xml
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: Nikkei Asia
+    url: https://asia.nikkei.com/rss/feed/nar
+    category: news
+    language: en
+    credibility: HIGH
+
+  # ── Geopolitics & Defense ────────────────────────────────────────────────────
+  - name: Defense News
+    url: https://www.defensenews.com/arc/outboundfeeds/rss/
+    category: news
+    language: en
+    credibility: HIGH
+
+  - name: Foreign Policy
+    url: https://foreignpolicy.com/feed/
+    category: analysis
+    language: en
+    credibility: HIGH
+
+# ── Podcasts (audio → whisper.cpp transcription) ─────────────────────────────
+podcasts:
+
+  # English
+  - name: We Study Billionaires
+    rss: https://feeds.megaphone.fm/PPLLC8974708240
+    language: en
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  - name: Motley Fool Money
+    rss: https://feeds.megaphone.fm/ARML8165884693
+    language: en
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  - name: Chat with Traders
+    rss: https://feeds.megaphone.fm/CWT9205947236
+    language: en
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  - name: Odd Lots (Bloomberg)
+    rss: https://feeds.megaphone.fm/VMP5705694065
+    language: en
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  - name: All-In Podcast
+    rss: https://allin.libsyn.com/rss
+    language: en
+    credibility: MEDIUM
+    max_episodes_per_day: 1
+
+
+
+  - name: CNBC Fast Money
+    rss: https://feeds.nbcnews.com/nbcnews/cnbc/cnbcfastmoney
+    language: en
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  - name: Exchanges at Goldman Sachs
+    rss: https://feeds.megaphone.fm/GLD9218176758
+    language: en
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  # German
+  - name: Alles auf Aktien (WELT)
+    rss: https://allesaufaktien.podigee.io/feed/mp3
+    language: de
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  - name: Doppelgänger Tech Talk
+    rss: https://feeds.megaphone.fm/LINDALA4208458418
+    language: de
+    credibility: MEDIUM
+    max_episodes_per_day: 1
+
+  - name: FinanzFluss
+    rss: https://feeds.megaphone.fm/FGH3030202797
+    language: de
+    credibility: HIGH
+    max_episodes_per_day: 1
+
+  - name: Ohne Aktien wird schwer
+    rss: https://feeds.megaphone.fm/PDS3666998460
+    language: de
+    credibility: MEDIUM
+    max_episodes_per_day: 1
+
+# ── API Sources ────────────────────────────────────────────────────────────────
+api_sources:
+
+  finnhub:
+    enabled: true
+    categories:
+      - general          # General market news
+      - forex            # FX and macro
+      - merger           # M&A
+    # Tickers to specifically pull news for (besides portfolio holdings):
+    tracked_tickers:
+      - NVDA
+      - AAPL
+      - MSFT
+      - TSLA
+      - AMZN
+      - GOOGL
+      - META
+      - SAP   # SAP SE (DAX)
+      - ASML  # ASML (EU tech)
+
+  newsapi:
+    enabled: true
+    queries:
+      - "insider buying significant stock"
+      - "earnings beat guidance raise surprise"
+      - "analyst upgrade price target raise strong buy"
+      - "short squeeze potential high short interest"
+      - "FDA clinical trial approval biotech"
+      - "merger acquisition buyout definitive agreement"
+      - "Aktien Kursziel Empfehlung Kaufen Aufstufung" # German: Stock target recommendation buy upgrade
+      - "Gewinnprognose Ausblick angehoben"           # German: Earnings forecast outlook raised
+    language_filter:
+      - en
+      - de
+    # Articles from last N hours (keep to 24 for daily run)
+    lookback_hours: 24
+
+# ── Fetch Settings ────────────────────────────────────────────────────────────
+fetch:
+  # Max concurrent RSS requests
+  rss_concurrency: 10
+  # Request timeout in seconds
+  timeout: 15
+  # User agent (polite scraping)
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  # Max articles per RSS feed per run (avoid token explosion)
+  max_articles_per_feed: 10
+  # Only articles published within this many hours
+  max_age_hours: 24
+  # Podcasts often publish less frequently; use a wider window
+  podcast_max_age_hours: 48

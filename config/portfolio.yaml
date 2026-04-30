@@ -1,0 +1,76 @@
+# =============================================================================
+# portfolio.yaml — GeoPoTech Capital (TeamML | Wikifolio: wfni000gpt)
+# =============================================================================
+
+# ── Mode ──────────────────────────────────────────────────────────────────────
+# real  = live holdings from Wikifolio API (fetched automatically each run)
+# paper = simulated portfolio starting from PAPER_PORTFOLIO_VALUE
+mode: real
+currency: EUR
+
+# ── Portfolio Identity ────────────────────────────────────────────────────────
+wikifolio_name: GeoPoTech Capital
+wikifolio_url: https://www.wikifolio.com/de/de/w/wfni000gpt
+team: TeamML
+
+# ── Fallback Holdings (used only if Wikifolio API is unreachable) ─────────────
+holdings:
+  - ticker: CASH
+    allocation_pct: 100.0
+    value_eur: 10000
+
+# ── Risk Constraints ──────────────────────────────────────────────────────────
+constraints:
+  # Maximum allocation to any single position
+  max_single_position_pct: 20.0
+
+  # Maximum allocation to any single sector (GICS sector)
+  max_sector_pct: 50.0
+
+  # Minimum cash reserve (never deploy below this)
+  min_cash_reserve_pct: 5.0
+
+  # Maximum number of open positions
+  max_positions: 15
+
+  # Minimum score (from Stage 2) to act on an idea
+  min_idea_score: 6.5
+
+  # Minimum position size to bother opening (% of portfolio)
+  min_position_size_pct: 2.0
+
+  # Maximum new capital to deploy in a single day (% of portfolio)
+  max_daily_deploy_pct: 30.0
+
+# ── Investment Style ──────────────────────────────────────────────────────────
+style:
+  # Primary investment thesis: Geopolitical + Technology convergence plays
+  thesis: >
+    GeoPoTech Capital focuses on companies at the intersection of geopolitics and
+    technology. We seek alpha in political regime changes, defense spending cycles,
+    supply chain realignments, rare earth access shifts, trade wars, sanction impacts,
+    energy security transitions, and emerging market political risk/opportunity.
+    South Korean equities (KOSPI/KOSDAQ) are a core market focus alongside US and EU.
+
+  # primary_horizon: INTRADAY / SHORT_TERM / MEDIUM_TERM / LONG_TERM
+  primary_horizon: MEDIUM_TERM
+
+  # Preferred markets — US, EU, South Korean equities
+  preferred_markets:
+    - US       # NYSE, NASDAQ
+    - KR       # KOSPI, KOSDAQ (Samsung, SK Hynix, Hyundai, etc.)
+    - DE       # XETRA / Frankfurt
+    - EU       # Other European
+
+  # ⚠️  STOCKS ONLY — All non-stock instruments are strictly prohibited
+  allow_short: false           # No short selling
+  allow_derivatives: false     # No options, warrants, futures
+  allow_etfs: false            # No ETFs or index funds
+  allow_crypto: false          # No cryptocurrency
+  allow_bonds: false           # No bonds or fixed income
+  instrument_types_allowed:
+    - STOCK                    # Equities only — listed stocks on recognised exchanges
+
+  # ⚠️  RECOMMENDATION ONLY — The AI must NEVER execute or place any trade
+  # All output is advisory. A human must review and manually place orders.
+  execution_mode: ADVISORY_ONLY
