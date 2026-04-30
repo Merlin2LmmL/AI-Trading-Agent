@@ -1,184 +1,123 @@
-# AI Trading Insider Processor
+# Autonomous Trading Intelligence Pipeline
 
-An automated, local-first artificial intelligence pipeline designed to systematically ingest financial media (news, podcasts, and global publications), extract actionable trading ideas, conduct deep fundamental research, and synthesize portfolio recommendations. 
-
-**Total recurring cost: $0.00** — entirely self-hosted on your local hardware.
+A high-performance, local-first intelligence architecture designed for the systematic ingestion of global financial media, fundamental research, and portfolio strategy synthesis.
 
 ---
 
-## Architecture
+## Executive Summary
 
-The pipeline is split into three distinct agentic stages:
+The Autonomous Trading Intelligence Pipeline provides a robust framework for processing unstructured financial data into actionable investment intelligence. By leveraging state-of-the-art local Large Language Models (LLMs), the system eliminates recurring API costs while maintaining strict data privacy and sovereignty.
 
-```text
-Stage 1 (Fast Information Extraction)   → Fetches media and extracts structured JSON trading ideas.
-Stage 2 (Deep Reasoning & Research)     → Conducts deep fundamental research and scores each idea.
-Stage 3 (Portfolio Synthesis & Report)  → Evaluates ideas against live portfolio constraints and generates a daily advisory report.
-```
+## System Architecture
 
-## Hardware Requirements & Recommendations
+The pipeline is engineered as a three-stage agentic workflow, transitioning from high-volume data acquisition to refined strategic decision-making.
 
-This system leverages large language models (LLMs) which are highly dependent on **VRAM (Video RAM)** and **System RAM**.
+### Agentic Cognitive Architecture
 
-### Memory Guidelines
-- **Barely Runs:** 0GB VRAM + 16GB System RAM. This configuration limits you to the smallest possible models and requires heavy CPU offloading.
-- **Minimum Recommendation:** 8GB VRAM + 32GB System RAM. This configuration limits you to smaller, less capable reasoning models (8B-14B parameters).
-- **Recommended Setup:** 16GB+ VRAM + 64GB+ System RAM. This enables you to run highly capable frontier reasoning models (like 70B parameter models) by offloading neural network layers between the GPU and System RAM.
+The system operates on a continuous cognitive cycle:
+1.  **Ingestion & Perception**: Monitoring of hundreds of RSS feeds, podcast transcripts, and financial APIs to identify emerging market signals.
+2.  **Autonomous Reasoning**: Upon signal identification, the system invokes high-parameter reasoning models to conduct a fundamental analysis, incorporating historical context and risk assessment.
+3.  **Strategic Synthesis**: The final stage evaluates intelligence against specific portfolio constraints and risk parameters to generate optimized recommendations.
 
-### GPU Compatibility
-- **NVIDIA GPUs:** Fully supported out-of-the-box on both Windows and Linux environments via Ollama.
-- **AMD GPUs:** If using AMD hardware (e.g., Radeon RX series), **a Linux distribution (such as Ubuntu) is strongly recommended**, as AMD ROCm and Vulkan support on Linux is significantly more mature. You will likely need to explicitly enable Ollama's Vulkan backend for optimal compatibility.
+### Operational Stages
+
+#### Stage 1: Media Ingestion and Feature Extraction
+*   **Data Sources**: Concurrent ingestion of RSS feeds, News APIs, and Audio Podcasts.
+*   **Audio Processing**: High-fidelity transcription via GPU-accelerated Whisper.cpp.
+*   **Intelligence Layer**: Efficient models (e.g., Qwen-32B) extract structured entities, identifying relevant tickers, sentiment, and core theses.
+
+#### Stage 2: Fundamental Research and Scoring
+*   **Deep Analysis**: For every identified signal, the system executes a multi-dimensional fundamental research protocol.
+*   **Reasoning Layer**: Frontier reasoning models (e.g., DeepSeek-R1 70B) utilize Chain-of-Thought (CoT) processing to score ideas based on fundamental strength and news urgency.
+*   **Audit Trail**: The system persists full reasoning traces for transparency and debugging.
+
+#### Stage 3: Portfolio Synthesis and Reporting
+*   **Constraint Matching**: Intelligence is cross-referenced with active holdings and risk management parameters.
+*   **Optimization**: Automated calculation of position sizing and sector concentration checks.
+*   **Deliverables**: Generation of comprehensive daily advisory reports and structured portfolio update files.
 
 ---
 
-## Setup
+## Hardware and Model Optimization
 
-### 1. Install Ollama
-Ollama is the local inference engine powering the AI models.
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
+System performance is directly correlated with available Video RAM (VRAM) and System RAM. The following tiers represent optimized configurations for local inference.
 
-**For AMD GPU Users on Linux:** If your GPU is not automatically detected, enable the Vulkan backend:
-```bash
-# Edit /etc/systemd/system/ollama.service — add to [Service]:
-Environment="OLLAMA_VULKAN=1"
-systemctl daemon-reload && systemctl restart ollama
-```
+| Configuration Tier | Hardware Specifications | Extraction Model (Stage 1) | Reasoning Model (Stage 2/3) |
+| :--- | :--- | :--- | :--- |
+| **Minimum** | 8GB VRAM / 32GB RAM | Gemma-9B | Mistral-7B |
+| **Standard** | 12GB VRAM / 48GB RAM | Qwen-14B | DeepSeek-V3-16B |
+| **Professional** | 16GB+ VRAM / 64GB+ RAM | Qwen-32B | **DeepSeek-R1-70B** (Quantized) |
+| **Enterprise** | Multi-GPU (48GB+ VRAM) | Qwen-72B | **DeepSeek-R1-70B** (Full Weights) |
 
-### 2. Install Python Dependencies & Configure
-Ensure you are running in a virtual environment.
-```bash
-make setup
-```
-Then edit `.env` and add your free API keys:
-- **Finnhub** (free tier): https://finnhub.io/register
-- **NewsAPI** (free tier): https://newsapi.org/register
+### GPU Acceleration Notes
+*   **NVIDIA Systems**: Full CUDA support via Ollama.
+*   **AMD Systems**: Optimized for ROCm and Vulkan on Linux environments. Enabling `OLLAMA_VULKAN=1` is recommended for maximum throughput.
 
-### 3. Pull AI Models
-By default, the pipeline is configured to use `gemma4` for fast extraction and `deepseek-r1:70b` for deep reasoning.
+---
+
+## Installation and Configuration
+
+### 1. Inference Engine
+Install Ollama and initialize the required models:
 ```bash
 make pull-models
 ```
-*Note: This will download approximately 50GB of model weights.*
 
-### 4. (Optional) Build whisper.cpp for Podcast Transcription
+### 2. Environment Configuration
+Initialize the environment and configure API credentials:
+```bash
+make setup
+cp .env.template .env
+```
+Ensure `FINNHUB_API_KEY` and `NEWSAPI_API_KEY` are correctly defined in the `.env` file.
+
+### 3. Audio Intelligence (Optional)
+To enable podcast processing, build the Whisper.cpp binary for your specific architecture:
 ```bash
 git clone https://github.com/ggerganov/whisper.cpp
 cd whisper.cpp
-make GGML_HIP=1          # Build with AMD GPU support (use appropriate flags for NVIDIA)
-./models/download-ggml-model.sh large-v3
-cd ..
+make GGML_HIP=1 # AMD ROCm
+# or
+make GGML_CUDA=1 # NVIDIA CUDA
 ```
 
 ---
 
-## Usage
+## Execution and Parameters
 
+The pipeline is managed through a comprehensive Command Line Interface (CLI).
+
+| Flag | Description |
+| :--- | :--- |
+| `--stage [1,2,3]` | Executes only the specified stage of the pipeline. |
+| `--date YYYY-MM-DD` | Processes data for a specific historical date. |
+| `--skip-podcasts` | Disables audio transcription for accelerated execution. |
+| `--score-threshold X.X` | Minimum threshold for signals to pass Stage 2 (Default: 6.5). |
+| `--resume` | Resumes execution from Stage 2 if Stage 1 data is present. |
+| `--force` | Overwrites existing output and bypasses deduplication logic. |
+| `--dashboard` | Activates a real-time monitoring dashboard on port 8080. |
+
+### Usage Example
 ```bash
-# Run the full daily pipeline
-make run
-
-# Run individual stages manually
-make run-stage1   # Fetch media and extract ideas only
-make run-stage2   # Research and score (requires Stage 1 output)
-make run-stage3   # Portfolio synthesis (requires Stage 2 output)
-
-# Run with custom parameters
-python -m src.main --skip-podcasts        # Skips audio transcription for faster execution
-python -m src.main --date 2026-04-28      # Reprocess a specific past date
-python -m src.main --stage 1              # Run only Stage 1
-python -m src.main --score-threshold 7.0  # Apply a stricter filter for idea passing
-```
-
-### Output Files (located in `output/YYYY-MM-DD/`)
-
-| File | Contents |
-|---|---|
-| `01_raw_articles.json` | Comprehensive log of all fetched media (useful for debugging) |
-| `02_ideas.json` | Extracted ideas formatted as structured `IdeaSummary` objects |
-| `03_scored_ideas.json` | Detailed research, fundamental scores, and AI thinking traces |
-| `04_portfolio_update.json` | Recommended portfolio adjustments |
-| `daily_report.md` | The final, human-readable advisory report |
-
----
-
-## Configuration
-
-### `config/sources.yaml`
-Manage your media ingestion sources. Add or remove RSS feeds, APIs, and podcast RSS links. Global sources are pre-configured.
-
-### `config/portfolio.yaml`
-Define your portfolio identity, investment thesis, active holdings, and strict risk constraints (e.g., maximum sector allocation, cash reserves).
-
-### `config/prompts/`
-Customize the specific instructions and constraints provided to the AI at each stage.
-
-### `.env`
-Your environment configuration file controls API access and model selection.
-```env
-FINNHUB_API_KEY=your_key
-NEWSAPI_API_KEY=your_key
-STAGE1_MODEL=gemma4
-STAGE2_MODEL=deepseek-r1:70b
-STAGE3_MODEL=deepseek-r1:70b
+python -m src.main --resume --score-threshold 7.5 --dashboard
 ```
 
 ---
 
----
+## Project Structure
 
----
-
-## Typical Runtime Estimates
-
-Performance varies significantly based on your hardware (specifically VRAM limits and CPU offloading speeds).
-
-| Stage | Task | Estimated Time |
-|---|---|---|
-| Data Ingestion | Concurrent API and RSS fetching | 2–3 min |
-| Transcription | 2–3 podcast episodes (1hr each) | 15–25 min |
-| Stage 1 | Information Extraction (Fast Model) | 15–25 min |
-| Stage 2 | Deep Research & Scoring (Reasoning Model) | 50–75 min |
-| Stage 3 | Portfolio Synthesis (Reasoning Model) | 10–15 min |
-| **Total** | | **~1.5–2.5 hours** |
-
----
-
-## Tuning Large Reasoning Models (Layer Offloading)
-
-When running massive reasoning models (like a 70B parameter model) on hardware with limited VRAM (e.g., 16GB), Ollama will automatically split the model layers between your fast GPU VRAM and your slower System RAM.
-
-To optimize inference speed, you should tune the number of layers loaded into VRAM:
-
-```bash
-# In your Ollama service config (/etc/systemd/system/ollama.service):
-Environment="OLLAMA_NUM_GPU_LAYERS=20"
+```text
+├── config/             # YAML configurations and LLM instruction sets
+├── output/             # Persistent storage for reports and data traces
+├── src/
+│   ├── fetchers/       # Ingestion modules for RSS, NewsAPI, and Media
+│   ├── stages/         # Core pipeline logic and stage management
+│   ├── llm/            # Inference client and prompt engineering
+│   └── main.py         # Orchestration entry point
+└── Makefile            # Standardized build and execution commands
 ```
 
-**Tuning Strategy:**
-Higher layer counts equal faster performance, but setting the number too high will result in Out-Of-Memory (OOM) errors. Start with a conservative number (e.g., `20`), monitor your GPU VRAM usage during a run, and increase it incrementally until you reach your VRAM limit.
-
 ---
 
-## Adding New Sources
-
-**Adding an RSS feed:**
-```yaml
-# config/sources.yaml → rss_feeds:
-- name: Defense News Insider
-  url: https://example.com/feed.rss
-  category: news
-  language: en   # Supported: 'en', 'de'
-  credibility: HIGH
-```
-
-**Adding a Podcast:**
-```yaml
-# config/sources.yaml → podcasts:
-- name: Geopolitics Daily
-  rss: https://feeds.example.com/podcast.rss
-  language: en
-  credibility: MEDIUM
-  max_episodes_per_day: 1
-```
+## Legal Disclaimer
+This software is provided for research and educational purposes. It does not constitute financial advice. Automated trading involves significant capital risk. Users should independently verify all AI-generated signals with primary data sources.
