@@ -44,6 +44,8 @@ async def fetch_fundamentals(ticker: str) -> FundamentalData | None:
             pe_ratio_forward=info.get("forwardPE"),
             revenue_growth_yoy=info.get("revenueGrowth"),
             gross_margin=info.get("grossMargins"),
+            operating_margin=info.get("operatingMargins"),
+            ebitda_margin=info.get("ebitdaMargins"),
             net_margin=info.get("profitMargins"),
             debt_to_equity=info.get("debtToEquity"),
             roe=info.get("returnOnEquity"),

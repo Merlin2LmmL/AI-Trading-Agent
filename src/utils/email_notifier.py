@@ -197,21 +197,44 @@ def send_daily_report(
     # Generate full HTML for attachment
     _, full_html = _build_email(report_md, run_date, wikifolio_name, actions_count)
     
-    # Create shortened version for email body
+    # Create version for email body
+    # We now include thinking traces and sources, but still exclude the bulky raw JSON data
     short_lines = []
-    depth = 0
+    skip_depth = 0
+    in_json_block = False
+    
     for line in report_md.split('\n'):
-        if '<details>' in line:
-            depth += 1
+        # Detect start of JSON block to skip it in the email body
+        if "#### Raw Research Data (JSON)" in line or "#### Raw Research Data" in line:
+            in_json_block = True
             continue
-        if '</details>' in line:
-            depth -= 1
+        
+        # If we are in a JSON block, skip until we hit the next header or end of details
+        if in_json_block:
+            if line.startswith("###") or "</details>" in line:
+                in_json_block = False
+                # Fall through to process this line
+            else:
+                continue
+
+        # For the email body, we strip the <details> and <summary> tags to ensure 
+        # the content is always visible regardless of email client support.
+        if "<details>" in line:
+            short_lines.append("---") # Add a separator
             continue
-        if depth == 0:
-            short_lines.append(line)
+        if "</details>" in line:
+            short_lines.append("---")
+            continue
+        if "<summary>" in line:
+            # Convert summary to a bold header
+            clean_summary = line.replace("<summary>", "").replace("</summary>", "").strip()
+            short_lines.append(f"**{clean_summary}**")
+            continue
+
+        short_lines.append(line)
             
     short_lines.append("")
-    short_lines.append("> 📎 **Note:** The full research report containing the AI's internal reasoning, source links, and raw data is attached to this email.")
+    short_lines.append("> 📎 **Note:** The full research report with raw JSON data is attached as an HTML file.")
     short_md = '\n'.join(short_lines)
     # Load recipients
     raw_recipients = os.getenv("NOTIFY_EMAILS", "").strip()

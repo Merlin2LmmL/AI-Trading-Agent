@@ -2,6 +2,7 @@
 output/
 config/session_memory.md
 seen_media.json
+watchlist.json
 
 # Media & Temp
 *.mp3

@@ -25,7 +25,7 @@ constraints:
   max_single_position_pct: 20.0
 
   # Maximum allocation to any single sector (GICS sector)
-  max_sector_pct: 50.0
+  max_sector_pct: 65.0
 
   # Minimum cash reserve (never deploy below this)
   min_cash_reserve_pct: 5.0
@@ -40,7 +40,7 @@ constraints:
   min_position_size_pct: 2.0
 
   # Maximum new capital to deploy in a single day (% of portfolio)
-  max_daily_deploy_pct: 30.0
+  max_daily_deploy_pct: 35.0
 
 # ── Investment Style ──────────────────────────────────────────────────────────
 style:

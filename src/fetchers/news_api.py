@@ -121,7 +121,8 @@ async def fetch_newsapi(
     """
     articles = []
     seen_urls: set[str] = set()
-    from_dt = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S")
+    # Free tier works best with simple date strings
+    from_dt = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
 
     for query in queries:
         params = {

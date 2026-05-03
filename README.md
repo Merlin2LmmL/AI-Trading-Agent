@@ -10,114 +10,64 @@ The Autonomous Trading Intelligence Pipeline provides a robust framework for pro
 
 ## System Architecture
 
-The pipeline is engineered as a three-stage agentic workflow, transitioning from high-volume data acquisition to refined strategic decision-making.
+The pipeline is engineered as a four-stage agentic workflow, transitioning from high-volume data acquisition to refined strategic decision-making.
 
 ### Agentic Cognitive Architecture
 
 The system operates on a continuous cognitive cycle:
-1.  **Ingestion & Perception**: Monitoring of hundreds of RSS feeds, podcast transcripts, and financial APIs to identify emerging market signals.
-2.  **Autonomous Reasoning**: Upon signal identification, the system invokes high-parameter reasoning models to conduct a fundamental analysis, incorporating historical context and risk assessment.
-3.  **Strategic Synthesis**: The final stage evaluates intelligence against specific portfolio constraints and risk parameters to generate optimized recommendations.
+1.  **Ingestion & Perception**: Monitoring of feeds to identify emerging market signals.
+2.  **Research Planning (The Librarian)**: Identification of critical information gaps and generation of targeted search queries to fill them.
+3.  **Autonomous Reasoning (The Analyst)**: Parallel execution of research plans followed by deep fundamental and geopolitical analysis.
+4.  **Strategic Synthesis**: Evaluation of intelligence against specific portfolio constraints and risk parameters.
 
 ### Operational Stages
 
 #### Stage 1: Media Ingestion and Feature Extraction
-*   **Data Sources**: Concurrent ingestion of RSS feeds, News APIs, and Audio Podcasts.
-*   **Audio Processing**: High-fidelity transcription via GPU-accelerated Whisper.cpp.
-*   **Intelligence Layer**: Efficient models (e.g., Qwen-32B) extract structured entities, identifying relevant tickers, sentiment, and core theses.
+*   **Data Sources**: RSS feeds, News APIs, and Audio Podcasts.
+*   **Intelligence Layer**: Efficient models extract structured entities, identifying relevant tickers, sentiment, and core theses.
 
-#### Stage 2: Fundamental Research and Scoring
-*   **Deep Analysis**: For every identified signal, the system executes a multi-dimensional fundamental research protocol.
-*   **Reasoning Layer**: Frontier reasoning models (e.g., DeepSeek-R1 70B) utilize Chain-of-Thought (CoT) processing to score ideas based on fundamental strength and news urgency.
-*   **Audit Trail**: The system persists full reasoning traces for transparency and debugging.
+#### Stage 2: Research Planning (The Librarian)
+*   **Gap Analysis**: The "Librarian" persona identifies what data is missing from the initial extract (e.g., specific earnings call details).
+*   **Strategy**: Generates 3-5 surgical search queries to gather missing context.
 
-#### Stage 3: Portfolio Synthesis and Reporting
-*   **Constraint Matching**: Intelligence is cross-referenced with active holdings and risk management parameters.
-*   **Optimization**: Automated calculation of position sizing and sector concentration checks.
-*   **Deliverables**: Generation of comprehensive daily advisory reports and structured portfolio update files.
+#### Stage 3: Analytical Reasoning (The Analyst)
+*   **Parallel Research**: Executes the Librarian's queries simultaneously.
+*   **Deep Analysis**: High-parameter reasoning models (e.g., DeepSeek-R1) synthesize the new data into a comprehensive research report with scores.
+
+#### Stage 4: Portfolio Synthesis and Reporting
+*   **Constraint Matching**: Cross-references intelligence with active holdings and risk management parameters.
+*   **Deliverables**: Generation of daily advisory reports and structured portfolio updates.
 
 ---
 
 ## Hardware and Model Optimization
 
-System performance is directly correlated with available Video RAM (VRAM) and System RAM. The following tiers represent optimized configurations for local inference.
-
-| Configuration Tier | Hardware Specifications | Extraction Model (Stage 1) | Reasoning Model (Stage 2/3) |
-| :--- | :--- | :--- | :--- |
-| **Minimum** | 8GB VRAM / 32GB RAM | Gemma-9B | Mistral-7B |
-| **Standard** | 12GB VRAM / 48GB RAM | Qwen-14B | DeepSeek-V3-16B |
-| **Professional** | 16GB+ VRAM / 64GB+ RAM | Qwen-32B | **DeepSeek-R1-70B** (Quantized) |
-| **Enterprise** | Multi-GPU (48GB+ VRAM) | Qwen-72B | **DeepSeek-R1-70B** (Full Weights) |
-
-### GPU Acceleration Notes
-*   **NVIDIA Systems**: Full CUDA support via Ollama.
-*   **AMD Systems**: Optimized for ROCm and Vulkan on Linux environments. Enabling `OLLAMA_VULKAN=1` is recommended for maximum throughput.
-
----
-
-## Installation and Configuration
-
-### 1. Inference Engine
-Install Ollama and initialize the required models:
-```bash
-make pull-models
-```
-
-### 2. Environment Configuration
-Initialize the environment and configure API credentials:
-```bash
-make setup
-cp .env.template .env
-```
-Ensure `FINNHUB_API_KEY` and `NEWSAPI_API_KEY` are correctly defined in the `.env` file.
-
-### 3. Audio Intelligence (Optional)
-To enable podcast processing, build the Whisper.cpp binary for your specific architecture:
-```bash
-git clone https://github.com/ggerganov/whisper.cpp
-cd whisper.cpp
-make GGML_HIP=1 # AMD ROCm
-# or
-make GGML_CUDA=1 # NVIDIA CUDA
-```
+| Configuration Tier | Hardware | Extraction (S1) | Planning (S2) | Reasoning (S3) | Portfolio (S4) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Minimum** | 12GB VRAM | Gemma-9B | Gemma-9B | Qwen-14B | Qwen-14B |
+| **Professional** | 24GB+ VRAM | Qwen-32B | Qwen-32B | **R1-32B** | **R1-32B** |
+| **Enterprise** | 48GB+ VRAM | Qwen-72B | Qwen-72B | **R1-70B** | **R1-70B** |
 
 ---
 
 ## Execution and Parameters
 
-The pipeline is managed through a comprehensive Command Line Interface (CLI).
-
 | Flag | Description |
 | :--- | :--- |
-| `--stage [1,2,3]` | Executes only the specified stage of the pipeline. |
+| `--stage [1,2,3,4]` | Executes only the specified stage of the pipeline. |
 | `--date YYYY-MM-DD` | Processes data for a specific historical date. |
-| `--skip-podcasts` | Disables audio transcription for accelerated execution. |
-| `--score-threshold X.X` | Minimum threshold for signals to pass Stage 2 (Default: 6.5). |
-| `--resume` | Resumes execution from Stage 2 if Stage 1 data is present. |
-| `--force` | Overwrites existing output and bypasses deduplication logic. |
+| `--skip-podcasts` | Disables audio transcription. |
+| `--score-threshold X.X` | Minimum threshold for signals to pass Stage 3 (Default: 6.5). |
+| `--resume` | Resumes execution from the next available stage. |
+| `--force` | Overwrites existing output. |
 | `--dashboard` | Activates a real-time monitoring dashboard on port 8080. |
 
 ### Usage Example
 ```bash
-python -m src.main --resume --score-threshold 7.5 --dashboard
-```
-
----
-
-## Project Structure
-
-```text
-├── config/             # YAML configurations and LLM instruction sets
-├── output/             # Persistent storage for reports and data traces
-├── src/
-│   ├── fetchers/       # Ingestion modules for RSS, NewsAPI, and Media
-│   ├── stages/         # Core pipeline logic and stage management
-│   ├── llm/            # Inference client and prompt engineering
-│   └── main.py         # Orchestration entry point
-└── Makefile            # Standardized build and execution commands
+make run ARGS="--resume --dashboard"
 ```
 
 ---
 
 ## Legal Disclaimer
-This software is provided for research and educational purposes. It does not constitute financial advice. Automated trading involves significant capital risk. Users should independently verify all AI-generated signals with primary data sources.
+This software is provided for research and educational purposes. It does not constitute financial advice. Automated trading involves significant capital risk.

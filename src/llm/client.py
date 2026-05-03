@@ -44,8 +44,9 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Optional
+from typing import Optional, Any
 
+import asyncio
 import ollama
 import structlog
 
@@ -113,6 +114,48 @@ def _build_options(model: str, temperature: float, num_ctx: int | None, num_gpu:
     return opts
 
 
+def _get_vram_gb() -> int:
+    """
+    Detect total VRAM in GB using:
+    1. OLLAMA_VRAM_GB environment variable (override)
+    2. rocm-smi (AMD)
+    3. nvidia-smi (NVIDIA)
+    Returns 0 if all detection methods fail.
+    """
+    import subprocess
+    import re
+
+    # 1. Manual override
+    env_val = os.getenv("OLLAMA_VRAM_GB")
+    if env_val:
+        try:
+            return int(env_val)
+        except ValueError:
+            pass
+
+    # 2. Try AMD (rocm-smi)
+    try:
+        res = subprocess.check_output(["rocm-smi", "--showmeminfo", "vram"], 
+                                    stderr=subprocess.STDOUT, encoding="utf-8")
+        match = re.search(r"VRAM Total Memory \(B\):\s*(\d+)", res)
+        if match:
+            return (int(match.group(1)) // (1024**3)) + 1
+    except Exception:
+        pass
+
+    # 3. Try NVIDIA (nvidia-smi)
+    try:
+        res = subprocess.check_output(["nvidia-smi", "--query-gpu=memory.total", "--format=csv,noheader,nounits"], 
+                                    stderr=subprocess.STDOUT, encoding="utf-8")
+        match = re.search(r"(\d+)", res)
+        if match:
+            return (int(match.group(1)) // 1024) + 1
+    except Exception:
+        pass
+
+    return 0  # Signal failure
+
+
 def _strip_thinking_tag(text: str) -> str:
     """Remove <think>…</think> wrapper so callers get clean content."""
     import re
@@ -139,6 +182,9 @@ class OllamaClient:
         self.retry_delay = float(os.getenv("OLLAMA_RETRY_DELAY",   str(_DEFAULT_RETRY_DELAY)))
 
         self._client = ollama.AsyncClient(host=self.base_url)
+        self.vram_gb = _get_vram_gb()
+        
+        log.debug("llm.hw_detected", vram_gb=self.vram_gb)
 
         # Warn once at startup if ROCm gfx override is not set
         if not os.getenv("HSA_OVERRIDE_GFX_VERSION"):
@@ -150,42 +196,80 @@ class OllamaClient:
                 ),
             )
 
+    def build_chatml_prompt(self, messages: list[dict]) -> str:
+        """
+        Construct a ChatML string for Qwen/DeepSeek models.
+        """
+        prompt = ""
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            prompt += f"<|im_start|>{role}\n{content}<|im_end|>\n"
+        prompt += "<|im_start|>assistant\n"
+        return prompt
+
     # ── Core completion ───────────────────────────────────────────────────────
 
     async def complete(
         self,
         model: str,
-        system_prompt: str,
-        user_prompt: str,
+        system_prompt: Optional[str] = None,
+        user_prompt: Optional[str] = None,
+        messages: Optional[list[dict]] = None,
         temperature: float = 0.1,
         max_tokens: int = 8192,
         thinking: bool = False,
         require_json: bool = False,
         num_ctx: int | None = None,
         num_gpu: int | None = None,
-    ) -> tuple[str, Optional[str]]:
+        stop_on_search: bool = False,
+        context: Optional[list[int]] = None,
+        use_tools: bool = False,
+        **kwargs
+    ) -> tuple[str, Optional[str], Optional[str], Optional[list[int]]]:
         """
         Send a completion request via the native ollama library (ASYNC).
+        Returns: (final_response, thinking_trace, search_query, context)
         """
-        actual_user_prompt = user_prompt
-        if thinking and _is_qwen3(model):
-            actual_user_prompt = f"/think\n\n{user_prompt}"
+        if messages:
+            actual_messages = messages
+        else:
+            actual_user_prompt = user_prompt
+            if thinking and _is_qwen3(model):
+                actual_user_prompt = f"/think\n\n{user_prompt}"
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": actual_user_prompt},
-        ]
+            actual_messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": actual_user_prompt},
+            ]
 
         options = _build_options(model, temperature, num_ctx, num_gpu)
         options["num_predict"] = max_tokens
 
         ctx_val = options["num_ctx"]
-        if ctx_val > 6144:
+        
+        if self.vram_gb <= 0:
+            # Detection failed and no override set
+            log.warning(
+                "vram.detection_failed",
+                num_ctx=ctx_val,
+                hint="Could not detect GPU VRAM. Smart Context limits not enabled."
+            )
+            vram_threshold = 4096 # Safe fallback
+        else:
+            # Rule of thumb: ~384 context tokens per GB is "safe" for 14b-32b models
+            vram_threshold = self.vram_gb * 384
+        
+        if ctx_val > vram_threshold:
             log.warning(
                 "vram.ctx_large",
                 num_ctx=ctx_val,
                 model=model,
-                hint="ctx > 6144 may overflow VRAM on a 16 GB GPU. Set OLLAMA_NUM_CTX=4096."
+                vram_gb=self.vram_gb,
+                hint=(
+                    f"ctx > {vram_threshold} may overflow VRAM on your {self.vram_gb}GB GPU. "
+                    "Consider reducing OLLAMA_NUM_CTX."
+                )
             )
 
         log.info(
@@ -194,44 +278,148 @@ class OllamaClient:
             thinking=thinking,
             require_json=require_json,
             num_ctx=ctx_val,
-            prompt_chars=len(user_prompt),
+            prompt_chars=sum(len(m.get("content", "")) for m in actual_messages),
         )
 
         kwargs: dict = {
             "model":    model,
-            "messages": messages,
+            "messages": actual_messages,
             "options":  options,
             "stream":   True,
         }
         if require_json:
-            kwargs["format"] = "json"
+            # CRITICAL: For DeepSeek-R1 and Qwen3 models, Ollama's native JSON mode
+            # often STRIPS the <think> trace or thinking field from the output.
+            # If we want thinking, we disable native JSON mode and rely on our 
+            # bracket-matching parser in structured.py.
+            is_reasoning_model = "deepseek-r1" in model.lower() or "qwen3" in model.lower()
+            if not (thinking and is_reasoning_model):
+                kwargs["format"] = "json"
+            else:
+                log.debug("llm.native_json_disabled_for_thinking", model=model)
 
         # ── Retry loop ────────────────────────────────────────────────────────
         last_exc: Exception | None = None
         delay = self.retry_delay
         
         raw_text = ""
+        thinking_trace: Optional[str] = None
+        search_query: Optional[str] = None
         elapsed = 0.0
 
         for attempt in range(1, self.max_retries + 1):
             try:
                 start    = time.time()
                 import sys
+                from src.utils import dashboard
+                
+                dashboard.state.llm_model = model
+                dashboard.state.llm_thought = ""
+                dashboard.state.llm_response = ""
+                
                 print(f"\n\033[96m[{model} Generating...]\033[0m")
                 
                 response_stream = await self._client.chat(**kwargs)
                 
                 raw_text_chunks = []
+                import re
+                
+                # Regex for [SEARCH: "query"] or [SEARCH: query]
+                SEARCH_REGEX = r"\[SEARCH:\s*['\"]?(.*?)['\"]?\s*\]"
+                
                 async for chunk in response_stream:
-                    content = chunk.message.content
+                    # In some versions of ollama-python, chunk is a dict; in others an object
+                    msg = getattr(chunk, 'message', None) or chunk.get('message', {})
+                    content = getattr(msg, 'content', '') or msg.get('content', '') or ""
+
+                    # ── Native Ollama thinking field (Qwen3, DeepSeek-R1 ≥ Ollama 0.6) ──
+                    # Models can return thinking in 'thinking' or 'thought' fields.
+                    native_thinking = (
+                        getattr(msg, 'thinking', None) or 
+                        getattr(msg, 'thought', None) or 
+                        (msg.get('thinking') if isinstance(msg, dict) else None) or
+                        (msg.get('thought') if isinstance(msg, dict) else None)
+                    )
+
+                    if native_thinking:
+                        dashboard.state.llm_thought += native_thinking
+                        sys.stdout.write(f"\033[90m{native_thinking}\033[0m")
+                        sys.stdout.flush()
+                        
+                        # Check for [SEARCH: "query"] in thinking
+                        if stop_on_search:
+                            match = re.search(SEARCH_REGEX, dashboard.state.llm_thought)
+                            if match:
+                                search_query = match.group(1).strip()
+                                log.info("llm.search_tag_detected", query=search_query)
+                                break
+
                     if content:
                         sys.stdout.write(content)
                         sys.stdout.flush()
                         raw_text_chunks.append(content)
+
+                        current_full_text = "".join(raw_text_chunks)
+
+                        if "<think>" in current_full_text:
+                            # ── <think> tag approach (models that embed thinking in content) ──
+                            parts = current_full_text.split("<think>", 1)
+                            preamble = parts[0].strip()
+                            rest = parts[1]
+
+                            if "</think>" in rest:
+                                # Thinking finished — split thought and real response
+                                thought_part, after = rest.split("</think>", 1)
+                                dashboard.state.llm_thought = thought_part.strip()
+                                response_text = (preamble + "\n" + after).strip() if preamble else after.strip()
+                                dashboard.state.llm_response = response_text
+                            else:
+                                # Still inside <think> — stream thought live
+                                dashboard.state.llm_thought = rest
+                                if preamble:
+                                    dashboard.state.llm_response = preamble
+                                else:
+                                    dashboard.state.llm_response = "Thinking..."
+                            
+                            # Check for [SEARCH: "query"] in thinking tag
+                            if stop_on_search:
+                                match = re.search(SEARCH_REGEX, dashboard.state.llm_thought)
+                                if match:
+                                    search_query = match.group(1).strip()
+                                    log.info("llm.search_tag_detected", query=search_query)
+                                    break
+
+                        elif not native_thinking:
+                            # Plain response — no thinking involved or thinking already ended
+                            dashboard.state.llm_response = current_full_text.strip()
+                            
+                            # If model doesn't use <think> tags but we want to catch a search tag in main content
+                            if stop_on_search:
+                                match = re.search(SEARCH_REGEX, dashboard.state.llm_response)
+                                if match:
+                                    search_query = match.group(1).strip()
+                                    log.info("llm.search_tag_detected_in_content", query=search_query)
+                                    break
                 
-                print("\n\033[96m[Generation Complete]\033[0m")
+                if search_query:
+                    print(f"\n\033[93m[Search Triggered: {search_query}]\033[0m")
+                else:
+                    print("\n\033[96m[Generation Complete]\033[0m")
+                
                 raw_text = "".join(raw_text_chunks)
                 elapsed  = time.time() - start
+                
+                # Consolidate thinking trace for the return value
+                thinking_trace = None
+                if thinking:
+                    # Priority 1: Extract from tags in the raw text
+                    match = re.search(r"<think>(.*?)</think>", raw_text, re.DOTALL)
+                    if match:
+                        thinking_trace = match.group(1).strip()
+                    # Priority 2: Use the dashboard state if it was updated via msg.thought
+                    elif dashboard.state.llm_thought:
+                        thinking_trace = dashboard.state.llm_thought.strip()
+                
                 break  # success
 
             except Exception as exc:
@@ -252,14 +440,97 @@ class OllamaClient:
             output_chars=len(raw_text),
         )
 
-        thinking_trace: Optional[str] = None
-        if thinking:
-            import re
-            match = re.search(r"<think>(.*?)</think>", raw_text, re.DOTALL)
-            thinking_trace = match.group(1).strip() if match else None
-
         clean_text = _strip_thinking_tag(raw_text)
-        return clean_text, thinking_trace
+        return clean_text, thinking_trace, search_query
+
+    async def generate(
+        self,
+        model: str,
+        prompt: str,
+        system: Optional[str] = None,
+        template: Optional[str] = None,
+        context: Optional[list[int]] = None,
+        options: Optional[dict] = None,
+        raw: bool = False,
+        stop_on_search: bool = False,
+        format: Optional[str] = None,
+    ) -> tuple[str, Optional[list[int]], Optional[str]]:
+        """
+        Low-level generation API for 'True Resumption' or specific prompt engineering.
+        Returns: (text, context, search_query)
+        """
+        kwargs = {
+            "model": model,
+            "prompt": prompt,
+            "stream": True,
+            "raw": raw,
+        }
+        if system: kwargs["system"] = system
+        if template: kwargs["template"] = template
+        if context: kwargs["context"] = context
+        if options: kwargs["options"] = options
+        if format: kwargs["format"] = format
+
+        log.info("llm.generate", model=model, prompt_chars=len(prompt), raw=raw, has_context=context is not None, format=format)
+
+        full_text = ""
+        new_context = []
+        search_query = None
+        
+        from src.utils import dashboard
+        dashboard.state.llm_model = model
+        import re
+        SEARCH_REGEX = r"\[SEARCH:\s*['\"]?(.*?)['\"]?\s*\]"
+        
+        # Determine if we should print in grey (thinking) or standard (content)
+        # For raw generation starting with <think>, we start in grey.
+        is_thinking = prompt.strip().endswith("<think>") or "<think>" in prompt
+        
+        try:
+            print(f"\n\033[96m[{model} Generating...]\033[0m")
+            response_stream = await self._client.generate(**kwargs)
+            async for chunk in response_stream:
+                content = chunk.get("response", "")
+                if content:
+                    full_text += content
+                    
+                    # Console output with coloring
+                    if is_thinking:
+                        sys.stdout.write(f"\033[90m{content}\033[0m")
+                    else:
+                        sys.stdout.write(content)
+                    sys.stdout.flush()
+                    
+                    # Update dashboard
+                    if "<think>" in full_text:
+                        parts = full_text.split("<think>", 1)
+                        rest = parts[1]
+                        if "</think>" in rest:
+                            thought, after = rest.split("</think>", 1)
+                            dashboard.state.llm_thought = thought.strip()
+                            dashboard.state.llm_response = after.strip()
+                            is_thinking = False # Switched to content
+                        else:
+                            dashboard.state.llm_thought = rest
+                    else:
+                        dashboard.state.llm_response = full_text.strip()
+
+                    # Detect search
+                    if stop_on_search:
+                        match = re.search(SEARCH_REGEX, full_text)
+                        if match:
+                            search_query = match.group(1).strip()
+                            log.info("llm.generate.search_tag_detected", query=search_query)
+                            break
+                
+                if chunk.get("done"):
+                    new_context = chunk.get("context", [])
+            
+            return full_text, new_context, search_query
+
+        except Exception as e:
+            log.error("llm.generate_error", error=str(e))
+            raise
 
     # ── Model availability ────────────────────────────────────────────────────
 
@@ -294,11 +565,26 @@ class OllamaClient:
 
 # ── Shared singleton ──────────────────────────────────────────────────────────
 
-_client: Optional[OllamaClient] = None
+_client: Optional[Any] = None
 
 
-def get_client() -> OllamaClient:
+def get_client() -> Any:
+    """
+    Factory function to get the configured LLM client.
+    Supports 'local' (Ollama) and 'api' (Gemini).
+    """
     global _client
-    if _client is None:
+    if _client is not None:
+        return _client
+
+    provider = os.getenv("LLM_PROVIDER", "local").lower()
+    
+    if provider == "api":
+        from src.llm.gemini import GeminiClient
+        log.info("llm.factory", provider="gemini_api")
+        _client = GeminiClient()
+    else:
+        log.info("llm.factory", provider="ollama_local")
         _client = OllamaClient()
+        
     return _client

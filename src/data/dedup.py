@@ -30,9 +30,16 @@ class ArticleGroup:
         """Build a combined text blob for LLM ingestion."""
         parts = []
         for i, art in enumerate(self.all_articles):
+            # Increase character limit for podcasts to capture more context
+            # (Stage 1 model should have enough context for a few thousand chars per podcast)
+            limit = max_chars_per_article
+            if art.source_type.value == "podcast":
+                limit = 5000  # Allow up to 5k chars for transcripts
+
             text = art.full_text or art.summary or ""
-            if len(text) > max_chars_per_article:
-                text = text[:max_chars_per_article] + "..."
+            if len(text) > limit:
+                text = text[:limit] + "..."
+                
             parts.append(
                 f"[Source {i+1}: {art.source_name} ({art.language.upper()}) — {art.published or 'unknown date'}]\n"
                 f"Title: {art.title}\n"
