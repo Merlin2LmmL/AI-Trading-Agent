@@ -30,7 +30,7 @@
         "counter_signals": [
           "Specific risk or contradiction mentioned"
         ],
-        "catalyst": "Specific event + date (e.g., Q3 Earnings on 2026-10-15)",
+        "catalyst": "Specific event + date (e.g., Q3 Earnings on ${EVENT_DATE})",
         "source_quality_score": "1-10 (MUST be 2-4 if article has no body text)",
         "sources": [
           {

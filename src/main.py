@@ -38,6 +38,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("google.genai").setLevel(logging.WARNING)
 
 log = structlog.get_logger()
+from src.data.storage import save_json
 
 from src.llm.client import get_client
 from src.stages import stage1_ingest, stage2_plan, stage3_reason, stage4_filter, stage5_portfolio
@@ -251,8 +252,15 @@ async def run_pipeline(
             from src.data.models import Stage3Output
             stage3_out = Stage3Output.model_validate(load_json("05_filtered_ideas.json", run_date))
         else:
-            stage3_out = await stage4_filter.run(stage3_out, run_date)
-            save_json(stage3_out, "05_filtered_ideas.json", run_date)
+            # Ensure stage3_out exists, load historical if missing
+            if stage3_out is None:
+                s3_file = Path(f"output/{run_date}/04_scored_ideas.json")
+                if s3_file.exists():
+                    from src.data.storage import load_json
+                    from src.data.models import Stage3Output
+                    stage3_out = Stage3Output.model_validate(load_json("04_scored_ideas.json", run_date))
+            if stage3_out is None:
+                raise RuntimeError("Stage 4 requires Stage 3 output. Ensure Stage 3 has been run or data available.")
 
     # ── Stage 5: Portfolio ──
     if should_run(5):
@@ -276,7 +284,7 @@ async def run_pipeline(
         report_path = Path(f"output/{run_date}/daily_report.md")
         if report_path.exists():
             from src.utils.email_notifier import send_daily_report
-            send_daily_report(report_path.read_text(encoding="utf-8"), run_date, live_portfolio.get("wikifolio_name") if live_portfolio else None, len(stage5_out.recommendations))
+            send_daily_report(report_path.read_text(encoding="utf-8"), run_date, stage5_out)
 
 
     total_min = (time.time() - total_start) / 60
@@ -294,7 +302,7 @@ Hardware Priority:
 
 Example Commands:
   Full Run:        python -m src.main --dashboard --resume
-  Specific Stage:  python -m src.main --stage 3 --date 2026-04-30
+  Specific Stage:  python -m src.main --stage 3 --date ${EXAMPLE_DATE}
   Reset Today:     python -m src.main --force
         """
     )
@@ -315,6 +323,10 @@ Example Commands:
     parser.add_argument(
         "--skip-podcasts", action="store_true",
         help="Bypass podcast downloading and transcription. Significantly faster if only news is needed."
+    )
+    parser.add_argument(
+        "--portfolio-name", type=str, default=None,
+        help="Override portfolio name from config or env var."
     )
     parser.add_argument(
         "--score-threshold", type=float, default=6.5,
@@ -341,6 +353,11 @@ Example Commands:
         help="Launch the real-time web dashboard (localhost:8080) to monitor AI thinking and progress."
     )
     args = parser.parse_args()
+    if args.portfolio_name:
+        os.environ["WIKIFOLIO_NAME"] = args.portfolio_name
+    else:
+        # Keep existing env value from .env or .secrets
+        os.environ.setdefault("WIKIFOLIO_NAME", os.getenv("WIKIFOLIO_NAME", "GeoPoTech Capital"))
 
     run_date = args.date or datetime.now().strftime("%Y-%m-%d")
     _resolve_models()

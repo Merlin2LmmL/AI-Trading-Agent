@@ -76,6 +76,19 @@ async def run(
         if r.recommendation == Recommendation.WATCH:
             watch_entries.append({"ticker": r.ticker, "reason": r.research.get("fundamental_assessment", "")})
             continue
+        # Skip sell/ reduce recommendations if the ticker is not in the current portfolio holdings
+        if r.recommendation in (Recommendation.SELL, Recommendation.REDUCE):
+            # Load portfolio holdings once for efficiency
+            if 'portfolio_holdings' not in globals():
+                import yaml
+                try:
+                    with open("config/portfolio.yaml", "r") as f:
+                        port = yaml.safe_load(f)
+                        globals()['portfolio_holdings'] = {h.get("ticker", h.get("isin", "")) for h in port.get("holdings", [])}
+                except Exception:
+                    globals()['portfolio_holdings'] = set()
+            if r.ticker not in globals()['portfolio_holdings']:
+                continue
         if not r.ticker:
             continue
         key = r.ticker
@@ -90,6 +103,7 @@ async def run(
     return Stage3Output(
         run_date=stage3_output.run_date,
         scored_ideas=filtered,
-        ideas_processed=stage3_output.ideas_processed,
+        ideas_processed=len(filtered),
+            ideas_passing=len(filtered),
         processing_duration_seconds=stage3_output.processing_duration_seconds,
     )

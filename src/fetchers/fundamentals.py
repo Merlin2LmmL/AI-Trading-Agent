@@ -16,7 +16,10 @@ async def fetch_fundamentals(ticker: str) -> FundamentalData | None:
     Pull fundamental data for a ticker using yfinance (ASYNC).
     Returns None if the ticker is invalid or data is unavailable.
     """
+    ticker = ticker.strip()
     if not ticker:
+        return None
+    if ticker.lower() == "unknown":
         return None
 
     try:

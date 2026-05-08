@@ -24,7 +24,7 @@
     "expected_json_schema": {
       "thought": "Analysis of what is missing and the investigative strategy.",
       "queries": [
-        "Surgical query 1 (e.g. 'ASML EUV export license restrictions 2026 update')",
+        "Surgical query 1 (e.g. 'ASML EUV export license restrictions ${YEAR} update')",
         "Surgical query 2",
         "Surgical query 3"
       ]

@@ -155,7 +155,7 @@ class Stage2Output(BaseModel):
 
 class ResearchReport(BaseModel):
     """Output of Stage 3 (Reasoning) for a single idea."""
-    id: str = Field(default_factory=lambda: str(__import__('uuid').uuid4()))
+    id: str
     ticker: Optional[str] = None
 
     research: dict = Field(default_factory=dict)

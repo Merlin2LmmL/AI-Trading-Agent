@@ -19,6 +19,8 @@ from typing import Optional
 
 import structlog
 
+import uuid as _uuid
+
 from src.data.models import (
     IdeaSummary, Stage1Output, ResearchPlan, Stage2Output
 )
@@ -75,8 +77,8 @@ async def run(
                 thesis_1sentence=f"Active monitoring of current portfolio holding {ticker}.",
                 direction="WATCH",
                 time_horizon="LONG_TERM",
-                conviction_from_sources=5,
-                source_quality_score=10,
+                conviction_from_sources=7,
+                source_quality_score=-1,
                 sources=[]
             ))
             log.info("stage2.portfolio_monitor.added", ticker=ticker)
@@ -93,7 +95,7 @@ async def run(
     dash_state.total_items = len(ideas)
     for idx, idea in enumerate(ideas):
         # Skip low conviction or low quality ideas
-        if idea.conviction_from_sources < 8 or idea.source_quality_score < 7:
+        if idea.conviction_from_sources < 8 or (idea.source_quality_score < 8 and idea.source_quality_score != -1):
             log.info("stage2.filter_low_confidence", ticker=idea.ticker, conviction=idea.conviction_from_sources, quality=idea.source_quality_score)
             continue
         dash_state.current_item_index = idx + 1

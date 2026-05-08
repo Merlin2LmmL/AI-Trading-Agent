@@ -162,7 +162,7 @@ def _parse_research_response(
 async def run(
     stage2_output: Optional[Stage2Output] = None,
     run_date: Optional[str] = None,
-    score_threshold: float = 6.5,
+    score_threshold: float = 7.0,
     num_gpu: Optional[int] = None,
 ) -> Stage3Output:
     """Execute Stage 3 — returns Stage3Output."""
@@ -259,7 +259,12 @@ async def run(
                         data = data[0]
                     
                     try:
-                        # Validation
+                        # Strip LLM-generated id so we can inject our own plan.id for traceability
+                        data.pop("id", None)
+                        data["id"] = idea_id
+                        data["ticker"] = ticker
+                        data["thinking_trace"] = thinking_trace
+                        data["input_prompt"] = input_prompt
                         report = ResearchReport.model_validate(data)
                         scored_ideas.append(report)
                         dash_state.reports_data.append(report.model_dump(mode="json"))
